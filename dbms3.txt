@@ -1,0 +1,126 @@
+3. Consider the schema for Movie Database:
+	ACTOR(Act_id, Act_Name, Act_Gender)
+	DIRECTOR(Dir_id, Dir_Name, Dir_Phone)
+	MOVIES(Mov_id, Mov_Title, Mov_Year,
+ 		Mov_Lang, Dir_id)
+	MOVIE_CAST(Act_id, Mov_id, Role)
+	RATING(Mov_id, Rev_Stars)
+
+create table actor(
+act_id integer primary key,
+act_name varchar(20),
+act_gender varchar(1));
+
+create table director(
+dir_id integer primary key,
+dir_name varchar(20),
+dir_phone integer);
+
+create table movies(
+mov_id integer primary key,
+mov_title varchar(20),
+mov_year varchar(4),
+mov_lang varchar(10),
+dir_id references director(dir_id)
+on delete cascade);
+
+create table movie_cast(
+act_id references actor(act_id)
+on delete cascade,
+mov_id references movie(mov_id)
+on delete cascade,
+role varchar(10),
+primary key(act_id,mov_id));
+
+
+create table ratings(
+mov_id references movie(mov_id)
+on delete cascade,
+rev_stars integer);
+
+
+insert into actor values(1,'samantha','F');
+insert into actor values(2,'mahesh babu','M');
+insert into actor values(3,'prabas','M');
+insert into actor values(4,'upendra','M');
+insert into actor values(5,'shivraj','M');
+insert into actor values(6,'anupamma','F');
+
+
+insert into director values(1,'rajmouli',92838743);
+insert into director values(2,'vamshi',72362742);
+insert into director values(3,'tom',92838743);
+insert into director values(4,'ram',92838743);
+insert into director values(5,'jai',92838743);
+insert into director values(6,'krishna',92838743);
+
+
+insert into movies values(1,'bahubali','2018','telugu',1);
+insert into movies values(2,'rrr','2021','telugu',1);
+insert into movies values(3,'jai simha','2020','kannada',4);
+insert into movies values(4,'tom cat','2018','telugu',5);
+insert into movies values(5,'avatar','2015','hindi',3);
+
+
+insert into movie_cast values(3,1,'hero');
+insert into movie_cast values(1,3,'heroione');
+insert into movie_cast values(5,4,'hero');
+insert into movie_cast values(2,2,'heroione');
+insert into movie_cast values(4,5,'comedian');
+
+insert into ratings values(1,5);
+insert into ratings values(2,10);
+insert into ratings values(3,7);
+insert into ratings values(4,8);
+insert into ratings values(5,9);
+
+
+1. list the titles of all movies directed by 'raj mouli'
+
+	select mov_title 
+	from movies
+	where dir_id in ( select dir_id
+	from director
+	where dir_name = 'rajmouli');
+
+
+2. find the movie names where one or more actors acted in
+	two or more movies
+	
+	select mov_title 
+	from movies M,Movie_cast MV
+	where M.mov_id = MV.mov_id and
+	act_id in (select act_id
+	from movie_cast group by act_id
+	having count(act_id) > 1)
+	group by mov_title
+	having count(*) > 1;
+
+3. list all actors who acted in a movie before 2018 and 
+	after 2020 (use join operation)
+	
+	select act_name, mov_title, mov_year
+	from Actor A
+	join movie_cast C on A.act_id = C.act_id
+	join movies M on C.mov_id = M.mov_id
+	where M.mov_year not between 2018 and 2020;
+
+4. find the title of movies and number of stars for each 
+	movie that has at least one ratings and find the highest
+	number of stars that movie received.sort the result by
+	movie title
+
+	select mov_title,Max(rev_stars)
+	from movies
+	inner join ratings using (mov_id)
+	group by mov_title
+	having max(rev_stars) > 0
+	order by mov_title;
+
+5. update ratings of all movies directed by 'ram' to 5
+
+	update ratings 
+	set rev_stars = 5
+	where mov_id in (select mov_id from movies
+	where dir_id in (select dir_id from director
+	where dir_name = "ram"));

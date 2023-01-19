@@ -1,0 +1,172 @@
+5 Consider the schema for Company Database:
+	EMPLOYEE(SSN, Name, Address, Sex, Salary, SuperSSN, DNo)
+	DEPARTMENT(DNo, DName, MgrSSN, MgrStartDate)
+	DLOCATION(DNo,DLoc)
+	PROJECT(PNo, PName, PLocation, DNo)
+	WORKS_ON(SSN, PNo, Hours)
+
+
+create table department(
+dno varchar2(20) primary key,
+dname varchar2(20),
+mgrstartdate date
+);
+
+create table employee(
+ssn varchar2(20) primary key,
+fname varchar2(20),
+lname varchar2(20),
+address varchar2(20),
+sex char(1),
+salary integer,
+superssn references employee(ssn),
+dno references department(dno));
+
+alter table department add mgrssn references employee(ssn);
+
+create table dlocation(
+dloc varchar2(20),
+dno references department(dno),
+primary key(dno,dloc));
+
+create table project(
+pno integer primary key,
+pname varchar2(20),
+plocation varchar2(20),
+dno references department(dno) on delete cascade
+);
+
+create table works_on(
+ssn references employee(ssn) on delete cascade,
+pno references project(pno) on delete cascade,
+hours integer,
+primary key(ssn,pno)
+);
+
+insert into employee(ssn,fname,lname,address,sex,salary)
+values ('abce01','john','scott','chikkbalapur','M',450000);
+insert into employee(ssn,fname,lname,address,sex,salary)
+values ('abce02','james','smith','chikkbalapur','M',500000);
+insert into employee(ssn,fname,lname,address,sex,salary)
+values ('abce03','hearn','baker','chikkbalapur','M',700000);
+insert into employee(ssn,fname,lname,address,sex,salary)
+values ('abce04','girish','malaya','chikkbalapur','M',650000);
+insert into employee(ssn,fname,lname,address,sex,salary)
+values ('abce05','pavan','hegde','chikkbalapur','M',450000);
+
+
+
+insert into department values(1,'accounts','01-jan-01','abce01');
+insert into department values(2,'it','01-aug-16','abce01');
+insert into department values(3,'ece','01-jun-08','abce02');
+insert into department values(4,'ise','01-aug-15','abce03');
+insert into department values(5,'cse','01-jun-02','abce04');
+
+
+update employee set 
+superssn = null,dno='3'
+where ssn = 'abce01';
+
+update employee set
+superssn = null,dno = '2'
+where ssn = 'abce03';
+
+update employee set
+superssn = null, dno = '4'
+where ssn = 'abce02';
+
+update employee set
+superssn= null,dno = '1'
+where ssn = 'abce04';
+
+update employee set 
+superssn = null,dno = '2'
+where ssn = 'abce05';
+
+
+insert into dlocation values('chikkballapur',1);
+insert into dlocation values('manglore',2);
+
+insert into dlocation values('chikkballapur',3);
+
+insert into dlocation values('manglore',3);
+
+insert into dlocation values('chikkballapur',4);
+
+insert into dlocation values('chikkballapur',5);
+
+
+insert into project values(100,'iot','chikkballapur',1);
+insert into project values(101,'cloud','chikkballapur',2);
+insert into project values(102,'bigdata','chikkballapur',2);
+insert into project values(103,'sensors','chikkballapur',4);
+insert into project values(104,'bank','chikkballapur',5);
+insert into project values(105,'smart city','chikkballapur',3);
+
+insert into works_on values('abce01',100,5);
+insert into works_on values('abce02',101,2);
+insert into works_on values('abce03',102,3);
+insert into works_on values('abce04',104,2);
+insert into works_on values('abce05',105,4);
+
+1 make a list of all project numbers for projects that involve an employee
+	whose last name is 'scott' either as a worker or as a manager of the 
+	department that controls the project
+
+
+	select distinct p.pno
+  	from  project p,department d,employee e
+	where e.dno = d.dno
+	and d.mgrssn = e.ssn
+	and e.lname = 'scott'
+	union
+	select distinct p1.pno
+	from project p1,works_on w,employee e1
+	where p1.pno = w.pno
+	and e1.ssn = w.ssn
+	and e1.lname = 'scott';
+
+2 show the resulting salaries if every employee working on the 'iot' project
+	is given a 10 percent raise
+
+	select E.fname,E.lname,1.1*E.salary as inc_sal
+	from employee E,works_on W,project P where
+	E.ssn = w.ssn
+	and w.pno = p.pno
+	and p.pname = 'iot';
+
+3 find sum of the salaries of all employees of the 'Accounts',department,as well
+	as the maximum salary, the minimum salary and the average salary in this
+	department
+
+	select sum(E.salary),Max(E.salary),Min(E.salary),
+	avg(e.salary)
+	from employee E,department D
+	where E.dno = D.dno
+	and d.dname = 'accounts';
+
+4 retrieve the name of each employee who works on all the projects controlled
+	by department number 5 (use NOT EXISTS operator)
+
+	select E.fname,E.lname from
+	employee E
+	where not exists((select pno
+	from project where dno='5')
+	minus(select pno from
+	works_on
+	where E.ssn = ssn));
+
+
+5. for each department that has more than five employees,retrieve the department
+	number and the number of its employees who are making more than rs 6,00,000
+
+	select d.dno,count(*)
+	from department d ,employee e
+	where d.dno = e.dno
+	and e.salary > 6000000
+	and d.dno in (select e1.dno
+	from employee e1
+	group by e1.dno
+	having count(*) > 5)
+	group by d.dno;
+  

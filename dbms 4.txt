@@ -1,0 +1,153 @@
+4. Consider the schema for College Database:
+	STUDENT(USN, SName, Address, Phone, Gender)
+	SEMSEC(SSID, Sem, Sec)
+	CLASS(USN, SSID)
+	SUBJECT(Subcode, Title, Sem, Credits)
+		IAMARKS(USN, Subcode, SSID,
+ 		Test1, Test2, Test3, FinalIA)
+
+
+create table student(
+usn varchar(11) primary key,
+sname varchar(25),
+address varchar(30),
+phone integer,
+gender char(1));
+
+create table semsec(
+ssid varchar(5) primary key,
+sem int(5),
+sec char(1));
+
+create table subject(
+subcode varchar(10) primary key,
+title varchar(20),
+sem integer,
+credits integer
+);
+
+create table class(
+usn references student(usn) on delete cascade,
+ssid references semsec(ssid) on delete cascade,
+primary key(usn,ssid)
+);
+
+create table iamarks(
+usn references student(usn) 
+on delete cascade,
+subcode references subject(Subcode)
+on delete cascade,
+ssid references semsec(ssid)
+on delete cascade,
+test1 integer,
+test2 integer,
+test3 integer,
+finialia integer,
+primary key (usn,subcode,ssid)
+);
+
+insert into student values('1ah20cs057','kushvith','banglore',3274823746,'M');
+insert into student values('1ah20cs035','dinesh','belgavi',3274823746,'M');
+insert into student values('1ah20cs034','deekishith','mangaluru',3274823746,'M');
+insert into student values('1ah20cs053','tina','banglore',3274823746,'F');
+insert into student values('1ah20cs050','jaideep','bellary',3274823746,'M');
+insert into student values('1ah20cs032','darshan','mandya',3274823746,'M');
+insert into student values('1ah20cs028','chandan','mysore',3274823746,'M');
+
+
+insert into semsec values('cse8a',8,'a');
+insert into semsec values('cse8b',8,'b');
+insert into semsec values('cse7a',7,'a');
+insert into semsec values('cse7b',7,'b');
+insert into semsec values('cse6a',6,'a');
+insert into semsec values('cse6b',6,'b');
+
+
+
+insert into class values('1ah20cs057','cse8a');
+insert into class values('1ah20cs050','cse7a');
+insert into class values('1ah20cs032','cse6a');
+insert into class values('1ah20cs034','cse6a');
+insert into class values('1ah20cs028','cse8b');
+insert into class values('1ah20cs053','cse7b');
+insert into class values('1ah20cs035','cse6b');
+
+
+insert into subject values('18cs51','me',8,4);
+insert into subject values('18cs52','cns',7,4);
+insert into subject values('18cs53','dbms',7,4);
+insert into subject values('18cs54','atc',8,4);
+insert into subject values('18cs55','python',6,4);
+insert into subject values('18cs56','unix',6,4);
+insert into subject values('18cs61','se',7,4);
+insert into subject values('18cs62','os',8,4);
+
+
+insert into iamarks values('1ah20cs057','18cs51','cse8a',15,18,18,0);
+insert into iamarks values('1ah20cs057','18cs52','cse8a',16,16,15,0);
+insert into iamarks values('1ah20cs057','18cs53','cse8a',14,18,17,0);
+insert into iamarks values('1ah20cs057','18cs54','cse8a',13,14,18,0);
+insert into iamarks values('1ah20cs057','18cs55','cse8a',16,15,15,0);
+insert into iamarks values('1ah20cs057','18cs56','cse8a',15,17,17,0);
+
+
+1. list all the students details studying in 6 semester a section
+
+	select s.*,ss.sem,ss.sec
+	from student s,semsec ss, class c
+	where s.usn = c.usn and
+	ss.ssid = c.ssid and
+	ss.sem = 6 and ss.sec = 'a';
+
+2.  compute the total number of male and female students in each 
+	semester and in each section
+
+	select ss.sem,ss.sec,s.gender,count(s.gender) as count 
+	from student s , semsec ss,class c
+	where s.usn = c.usn and
+	ss.ssid = c.ssid
+	group by ss.sem,ss.sec,s.gender
+	order by sem;
+
+3. create view of test1 marks of student usn '1ah20cs057' in all 
+	subjects
+	
+	create view student_test1_marks as
+	select test1,subcode from iamarks
+	where usn = '1ah20cs057';
+
+
+4. calculate the finalia (Average of best two tests marks) and
+	update the corresponding table for all students
+
+	create view finalvia as select usn,subcode,
+	greatest(avg(test1 + test2)/2,avg(test2 + test3)/2,avg(test1 + test3)/2) as
+  	finalia from iamarks
+	group by usn,subcode;
+
+	update iamarks i set finialia = (
+	select finalia from finalvia f where i.usn = f.usn
+	and i.subcode = f.subcode);
+
+	note: if greatest doesnt work use the max() function
+
+5. categorize the students based on the following criterion
+	if finialia = 17 to 20 then cat = 'outstanding'
+	if finialia = 12 to 16 then cat = 'Average'
+	if finialia < 12 then cat = 'weak'
+	give these details only for 8 th sem a,b,c section students
+
+
+	select s.usn,s.name,s.address,s.phone,s.gender,
+	( case
+	when IA.finialia between 17 and 20 then 'outstanding'
+	when IA.finialia between 12 and 16 then 'average'
+	else 'weak'
+	end) as cat 
+	from student s,semsec ss,iamarks IA,subject sub
+	where s.usn = IA.usn and
+	ss.ssid = IA.ssid and
+	sub.subcode = IA.subcode and
+	sub.sem = 8;
+	
+

@@ -1,0 +1,148 @@
+ Consider the following schema for a Library Database:
+
+BOOK(Book_id, Title, 
+Publisher_Name, Pub_Year)
+BOOK_AUTHORS(Book_id, 
+Author_Name)
+
+PUBLISHER(Name, Address, Phone)
+
+BOOK_COPIES(Book_id, Branch_id,
+ No-of_Copies)
+
+BOOK_LENDING(Book_id, 
+Branch_id, Card_No, 
+Date_Out, Due_Date)
+
+LIBRARY_BRANCH(Branch_id, 
+Branch_Name, Address)
+
+create table publisher(
+pname varchar(20) primary key,
+phone integer,
+address varchar(30));
+
+create table book(
+book_id integer primary key,
+title varchar(20),
+pub_year varchar(20),
+pname references publisher(pname)
+on delete cascade);
+
+create table book_Authors(
+book_id references book(book_id)
+on delete cascade,
+author_name varchar(20),
+primary key(book_id,author_name));
+
+create table library_branch(
+branch_id integer primary key,
+address varchar(30),
+branch_name varchar(20));
+
+create table book_copies(
+book_id references book(book_id)
+on delete cascade,
+branch_id references library_branch(branch_id)
+on delete cascade,
+no_of_copies integer,
+primary key(book_id,branch_id)
+);
+
+create table book_lending(
+book_id references book(book_id)
+on delete cascade,
+branch_id references library_branch(branch_id)
+on delete cascade,
+card_no integer,
+date_out timestamp,
+due_date timestamp,
+primary key(book_id,branch_id,card_no)
+);
+
+INSERT INTO PUBLISHER VALUES ('MCGRAW-HILL', 9989076587, 'BANGALORE');
+INSERT INTO PUBLISHER VALUES ('pearson', 9989076587, 'new delhi');
+INSERT INTO PUBLISHER VALUES ('random house', 9989076587, 'hydrabad');
+INSERT INTO PUBLISHER VALUES ('hachette livre', 9989076587, 'chennai');
+INSERT INTO PUBLISHER VALUES ('grupo planeta', 9989076587, 'BANGALORE');
+
+
+INSERT INTO BOOK VALUES (1,'DBMS','JAN-2017', 'MCGRAW-HILL');
+INSERT INTO BOOK VALUES (2,'ADBMS','JUN-2016','MCGRAW-HILL');
+INSERT INTO BOOK VALUES (3,'CN','SEP-2016', 'PEARSON');
+INSERT INTO BOOK VALUES (4,'CG','SEP-2015', 'GRUPO PLANETA');
+INSERT INTO BOOK VALUES (5,'OS','MAY-2016', 'PEARSON');
+
+INSERT INTO BOOK_AUTHORS VALUES ('NAVATHE', 1);
+INSERT INTO BOOK_AUTHORS VALUES ('NAVATHE', 2);
+INSERT INTO BOOK_AUTHORS VALUES ('TANENBAUM', 3);
+INSERT INTO BOOK_AUTHORS VALUES ('EDWARD ANGEL', 4);
+INSERT INTO BOOK_AUTHORS VALUES ('GALVIN', 5);
+
+
+insert into library_branch values('10', 'banglore','rr nagar');
+insert into library_branch values('11', 'banglore','rnsit');
+insert into library_branch values('12', 'banglore','rajaji nagar');
+insert into library_branch values('13', 'manglore','nitte');
+insert into library_branch values('14', 'udupi','manipal');
+
+insert into book_copies values(1,10,10);
+insert into book_copies values(2,11,5);
+insert into book_copies values(3,12,8);
+insert into book_copies values(4,13,1);
+insert into book_copies values(5,14,18);
+
+insert into book_lending values(1,10,101,'01-jan-17','01-jun-17');
+insert into book_lending values(2,11,103,'01-jan-17','01-jul-17');
+insert into book_lending values(3,12,104,'01-feb-17','01-aug-17');
+insert into book_lending values(3,14,105,'01-mar-17','01-sep-17');
+insert into book_lending values(2,14,101,'01-apr-17','01-may-17');
+
+1 retrieve details of all books in the library -id,
+	title nameofpublisher author, number of copies
+in each branch etc
+
+select B.book_id,B.title,B.pname,A.author_name,C.no_of_copies,
+L.branch_id
+from BOOK B,book_Authors A,book_copies C,library_branch L
+where B.book_id = A.book_id and B.book_id = C.book_id
+ and L.branch_id = C.branch_id;
+
+2 get the particulars of a borrowers who have borrowed more
+than 3 books but from jan-2017 to jun-17
+
+
+select card_no
+from book_lending
+where date_out between '01-jan-17' and '01-jul-17'
+group by card_no
+having count(*) >3;
+
+
+3 delete a book in book table update the contents of
+	otherss table to reflect this data manipulation
+	operation
+
+	delete from book where book_id = 3;
+	
+	select * from book;
+	select * from book_authors;
+
+4 partition the book table based on year of publication.
+	demonstrate its working with a simple query
+	
+	create view v_publication as 
+	select pub_year from book
+	
+	select * from v_publication;
+
+5 create a view of all books and its number of copies
+	that are currently available in library
+
+	create view V_Books as 
+	select B.book_id, B.title,C.no_of_copies
+	from Book B,book_copies C,library_branch L
+	where	
+ 	B.book_id = C.book_id and
+	c.branch_id = L.branch_id; 
+	 
